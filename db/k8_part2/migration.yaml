@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mysql-migration-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: mysql-migration-job
+        image: nyuappsec/assign3-db:v1
+        
+        #command: ['python3', '/GiftcardSite/manage.py', 'migrate']
+        
+        command: [ "/bin/sh","-c","mysql -uroot -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE<migration.sql"]
+        
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: password
+
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: mysql_db
+
+          - name: MYSQL_HOST
+            value: mysql-service
+        volumeMounts:
+          - name: mysql-volume-mount
+            mountPath: /var/lib/mysql
+        ports:
+          - containerPort: 3306
+
+      volumes:
+        - name: mysql-volume-mount
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+
+      restartPolicy: Never
+
+
+  backoffLimit: 0
