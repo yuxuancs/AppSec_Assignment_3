@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: selectjob
+spec:
+  template:
+    spec:
+      containers:
+        - name: mysql-jobcontainer
+          image: mysql:latest
+          env:
+            - name: MYSQL_PWD
+              value: thisisatestthing.
+              
+            - name: MYSQL_HOST
+              value: mysql-service
+
+          command: ["mysql",  "-uroot", "-e", "select * from LegacySite_user", "GiftcardSiteDB"]
+      restartPolicy: Never
+  backoffLimit: 4
+
