@@ -1,0 +1,79 @@
+In order to make work with db. I duplicate db/k8 file with naming db/k8_part2 for this part. Then,
+I create two new yaml files named migration.yaml (.sql) and seed.yaml (.sql) file.
+
+Next, I modify the environment variables that uses to connect to the database with selection of 
+database service and add commands to run and finish migration
+
+In migration.yaml I replace command: 
+['python3', '/GiftcardSite/manage.py', 'migrate'] with 
+[ "/bin/sh","-c","mysql -uroot -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE<migration.sql"]
+
+In seed.yaml I have command: [ "/bin/sh","-c","mysql -uroot -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE<seed.sql"]
+
+
+Next, I use sentence by reading the setup.sql file and populate all data from cdv to database instead of using python to finish.
+
+Then, I use the environment as following for database connect and volume:
+
+database_connection_env:
+    env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: password
+
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: mysql_db
+
+          - name: MYSQL_HOST
+            value: mysql-service
+volumn:
+    volumeMounts:
+          - name: mysql-volume-mount
+            mountPath: /var/lib/mysql
+        ports:
+          - containerPort: 3306
+
+      volumes:
+        - name: mysql-volume-mount
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+
+After these steps, I also need to modify dockerfile from db folder by commenting out the COPY statement. 
+
+This statement has been commented out:
+#COPY ./setup.sql /docker-entrypoint-initdb.d/setup.sql
+
+so the final dockerfile will be:
+
+FROM mysql:latest
+
+COPY ./products.csv /products.csv
+COPY ./users.csv /users.csv
+
+#COPY ./setup.sql /docker-entrypoint-initdb.d/setup.sql
+
+COPY ./migration.sql /migration.sql
+COPY ./seed.sql /seed.sql
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["mysqld", "--secure-file-priv=/"]
+
+
+
+The following command setup:
+1. kubectl apply -f db/k8
+2. kubectl patch pvc mysql-pvc -p '{"metadata":{"finalizers":null}}'
+3. docker build -t nyuappsec/assign3-db:v1 db/
+4. kubectl apply -f db/k8_part2
+5. kubectl apply -f db/k8_part2/migration.yaml
+6. kubectl apply -f db/k8_part2/seed.yaml
+
+
+
+
+
