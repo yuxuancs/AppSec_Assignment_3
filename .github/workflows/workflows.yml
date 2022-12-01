@@ -1,0 +1,66 @@
+name: workflows
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Minikube
+      uses: manusa/actions-setup-minikube@v2.7.1
+      with:
+        minikube version: 'v1.28.0'
+        kubernetes version: 'v1.25.2'
+        driver: 'docker'
+    - name: start minikube
+      run: |
+        minikube start
+        eval $(minikube docker-env)
+    - name: part 1 Build the Docker image
+      run: |
+        docker build -t nyuappsec/assign3:v0 .
+        docker build -t nyuappsec/assign3-proxy:v0 proxy/
+        docker build -t nyuappsec/assign3-db:v0 db/
+        
+    - name: secret mysecret
+      run: kubectl apply -f info.yaml
+    
+    - name: apply kubernetes
+      run: |
+        kubectl apply -f db/k8
+        kubectl apply -f GiftcardSite/k8
+        kubectl apply -f proxy/k8
+        kubectl get pods
+        kubectl get service
+    
+    - name: part 2 setup
+      run: |
+        kubectl apply -f db/k8
+        kubectl patch pvc mysql-pvc -p '{"metadata":{"finalizers":null}}'
+        docker build -t nyuappsec/assign3-db:v1 db/
+        kubectl apply -f db/k8_part2
+        kubectl apply -f db/k8_part2/migration.yaml
+        kubectl apply -f db/k8_part2/seed.yaml
+        
+    - name: part 3 apply prometheus
+      run: |
+        kubectl apply namespace monitoring
+        kubectl apply -f clusterRole.yaml
+        kubectl apply -f config-map.yaml
+        kubectl apply -f prometheus-deployment.yaml
+        kubectl get pods --namespace=monitoring
+        minikube service proxy-service
+        
+    
+        
+    
+      
