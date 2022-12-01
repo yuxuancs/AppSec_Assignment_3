@@ -20,6 +20,7 @@ jobs:
       with:
         minikube version: 'v1.28.0'
         kubernetes version: 'v1.25.2'
+        docker version: 'v20.10.21'
     - name: start minikube
       run: |
         minikube start
