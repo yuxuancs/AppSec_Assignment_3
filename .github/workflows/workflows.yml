@@ -21,6 +21,10 @@ jobs:
         minikube version: 'v1.28.0'
         kubernetes version: 'v1.25.2'
         docker version: 'v20.10.21'
+    - name: setup
+      run: |
+        sudo mv /home/runner/.kube /home/runner/.minikube $HOME
+        sudo chown -R $USER $HOME/.kube $HOME/.minikube
     - name: start minikube
       run: |
         minikube start
