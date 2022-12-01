@@ -20,12 +20,10 @@ jobs:
       with:
         minikube version: 'v1.28.0'
         kubernetes version: 'v1.25.2'
-        docker version: 'v20.10.21'
+        driver: 'docker'
     - name: start minikube
       run: |
         minikube start
-        sudo mv /home/runner/.kube /home/runner/.minikube $HOME
-        sudo chown -R $USER $HOME/.kube $HOME/.minikube
         eval $(minikube docker-env)
     - name: part 1 Build the Docker image
       run: |
