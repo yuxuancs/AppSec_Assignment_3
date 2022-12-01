@@ -50,6 +50,7 @@ jobs:
         kubectl apply -f db/k8_part2
         kubectl apply -f db/k8_part2/migration.yaml
         kubectl apply -f db/k8_part2/seed.yaml
+        minikube service proxy-service
         
     - name: part 3 apply prometheus
       run: |
@@ -58,7 +59,7 @@ jobs:
         kubectl apply -f config-map.yaml
         kubectl apply -f prometheus-deployment.yaml
         kubectl get pods --namespace=monitoring
-        minikube service proxy-service
+        
         
     
         
